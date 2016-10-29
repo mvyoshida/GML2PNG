@@ -18,13 +18,26 @@ namespace GML2PNG
 		{
 			high = high_;
 			elevation = new float[high.x + 1, high.y + 1];
-			min = elevationMin;
-			max = elevationMax;
+			min = elevationMax;
+			max = elevationMin;
 			UpdateElevation(startPoint, tupleList);
 		}
 		public void Add(Location<int> high_, Location<int> startPoint, string[] tupleList)
 		{
 			UpdateElevation(startPoint, tupleList);
+		}
+		public void FixLimit()
+		{
+			min = elevationMax;
+			max = elevationMin;
+			foreach (var v in elevation)
+			{
+				var ele = v;
+				if (min > ele)
+					min = ele;
+				if (max < ele)
+					max = ele;
+			}
 		}
 		private void UpdateElevation(Location<int> startPoint, string[] tupleList)
 		{
@@ -36,12 +49,7 @@ namespace GML2PNG
 			{
 				for (int x = sx; x < high.x + 1; ++x)
 				{
-					var ele = ReadTuple(tupleList[t++]);
-					elevation[x, y] = ele;
-					if (min > ele)
-						min = ele;
-					if (max < ele)
-						max = ele;
+					elevation[x, y] = ReadTuple(tupleList[t++]);
 					if (t == tupleList.Length - 1)
 						return;
 				}
