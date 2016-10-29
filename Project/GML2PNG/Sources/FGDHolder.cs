@@ -8,8 +8,13 @@ namespace GML2PNG
 {
 	class FGDHolder
 	{
+		//日本なので、高さの制限を4000にしておく。
+		//超えた場合は情報落ちします。
+		const int highLimit = 4000;
+
 		Dictionary<Area, AreaData> dicDatas;
-		public Location<int> high;
+		Location<int> high;
+
 		public FGDHolder()
 		{
 			dicDatas = new Dictionary<Area, AreaData>(); ;
@@ -26,6 +31,7 @@ namespace GML2PNG
 			{
 				if (high.x != fgd.high.x || high.y != fgd.high.y)
 				{
+					//複数のファイルで異なるグリッドセル配列数の対応はしていません。
 					System.Diagnostics.Debug.WriteLine("データサイズにばらつきがある");
 					return;
 				}
@@ -44,43 +50,41 @@ namespace GML2PNG
 		}
 		public void Export()
 		{
-			//16が返る、つまりは2byte
-			//int pixelByteSize = System.Drawing.Image.GetPixelFormatSize(System.Drawing.Imaging.PixelFormat.Format16bppGrayScale) / 8;
-			AreaData[,] areadata = NewAreaData(NewSortedSetX(), NewSortedSetY());
-			int xArea = areadata.GetLength(0);
-			int yArea = areadata.GetLength(1);
-			int xHigh = high.x + 1;
-			int yHigh = high.y + 1;
-			int xImage = (xArea * xHigh);
-			int yImage = (yArea * yHigh);
-			byte[] hightMap = new byte[yImage * xImage * 2];
-			for (int ya = 0; ya < yArea; ++ya)
+			AreaData[,] areaDataArray = NewAreaDataArray(NewSortedSetX(), NewSortedSetY());
+			int areaArrayX = areaDataArray.GetLength(0);
+			int areaArrayY = areaDataArray.GetLength(1);
+			int areaPixelX = high.x + 1;
+			int areaPixelY = high.y + 1;
+			int outputImageX = (areaArrayX * areaPixelX);
+			int outputImageY = (areaArrayY * areaPixelY);
+			byte[] hightMap = new byte[outputImageY * outputImageX * 2];
+			for (int areaY = 0; areaY < areaArrayY; ++areaY)
 			{
-				for (int xa = 0; xa < xArea; ++xa)
+				for (int areaX = 0; areaX < areaArrayX; ++areaX)
 				{
-					AreaData a = areadata[xa, ya];
-					if (a != null)
+					AreaData areaData = areaDataArray[areaX, areaY];
+					if (areaData != null)
 					{
-						for (int y = 0; y < yHigh; ++y)
+						for (int y = 0; y < areaPixelY; ++y)
 						{
-							for (int x = 0; x < xHigh; ++x)
+							int i = ((areaY * areaPixelY + y) * outputImageX + (areaX * areaPixelX)) * 2;
+							for (int x = 0; x < areaPixelX; ++x)
 							{
-								UInt16 v = (UInt16)(a.elevation[x, y] *65535 / 5000 );
-								int i = ((ya * yHigh + y) * xImage + (xa * xHigh + x)) * 2;
-								hightMap[i + 0] = (byte)(v & 0xff);
-								hightMap[i + 1] = (byte)((v >> 8) & 0xff);
+								UInt16 v = (UInt16)(areaData.elevation[x, y] *65535 / highLimit);
+								hightMap[i++] = (byte)(v & 0xff);
+								hightMap[i++] = (byte)((v >> 8) & 0xff);
 							}
 						}
 					}
 					else
 					{
-						for (int y = 0; y < yHigh; ++y)
+						for (int y = 0; y < areaPixelY; ++y)
 						{
-							for (int x = 0; x < xHigh; ++x)
+							int i = ((areaY * areaPixelY + y) * outputImageX + (areaX * areaPixelX)) * 2;
+							for (int x = 0; x < areaPixelX; ++x)
 							{
-								int i = ((ya * yHigh + y) * xImage + (xa * xHigh + x)) * 2;
-								hightMap[i + 0] = 0;
-								hightMap[i + 1] = 0;
+								hightMap[i++] = 0;
+								hightMap[i++] = 0;
 							}
 						}
 					}
@@ -88,11 +92,11 @@ namespace GML2PNG
 			}
 			var bmp = System.Windows.Media.Imaging.BitmapImage.Create
 			(
-				xImage, yImage, 96,96,
+				outputImageX, outputImageY, 96,96,
 				System.Windows.Media.PixelFormats.Gray16, 
 				System.Windows.Media.Imaging.BitmapPalettes.Gray16,
 				hightMap,
-				xImage * 16 / 8
+				outputImageX * 16 / 8
 			);
 			Microsoft.Win32.SaveFileDialog sd = new Microsoft.Win32.SaveFileDialog();
 			sd.Filter = "pngファイル(*.png)|*.png";
@@ -108,23 +112,6 @@ namespace GML2PNG
 					encoder.Save(stream);
 				}
 			}
-			//using (System.Drawing.Bitmap bmp = new System.Drawing.Bitmap(xArea * xHigh, yArea * yHigh, System.Drawing.Imaging.PixelFormat.Format16bppGrayScale))
-			//{
-			//	if(false)
-			//	{
-			//		System.Drawing.Imaging.BitmapData bd = bmp.LockBits(new System.Drawing.Rectangle(0, 0, bmp.Width, bmp.Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format16bppGrayScale);
-			//		System.Runtime.InteropServices.Marshal.Copy(hightMap, 0, bd.Scan0, hightMap.Length);
-			//		bmp.UnlockBits(bd);
-			//	}
-			//	System.Windows.Forms.SaveFileDialog sd = new System.Windows.Forms.SaveFileDialog();
-			//	sd.Filter = "pngファイル(*.png)|*.png";
-			//	sd.FileName = "heightMap.png";
-			//	sd.Title = "pngGファイル名を指定してください。";
-			//	if (sd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-			//	{
-			//		bmp.Save(sd.FileName, System.Drawing.Imaging.ImageFormat.Png);
-			//	}
-			//}
 		}
 		SortedSet<float> NewSortedSetX()
 		{
@@ -146,7 +133,7 @@ namespace GML2PNG
 			}
 			return ret;
 		}
-		Tuple<float, float>[] NewPairValue(SortedSet<float> v)
+		Tuple<float, float>[] NewPairValueArray(SortedSet<float> v)
 		{
 			float[] va = v.ToArray<float>();
 			float[] v1 = new float[v.Count - 1];
@@ -161,10 +148,10 @@ namespace GML2PNG
 			}
 			return ret;
 		}
-		AreaData[,] NewAreaData(SortedSet<float> xSet, SortedSet<float> ySet)
+		AreaData[,] NewAreaDataArray(SortedSet<float> xSet, SortedSet<float> ySet)
 		{
-			Tuple<float, float>[] xTuple = NewPairValue(xSet);
-			Tuple<float, float>[] yTuple = NewPairValue(ySet);
+			Tuple<float, float>[] xTuple = NewPairValueArray(xSet);
+			Tuple<float, float>[] yTuple = NewPairValueArray(ySet);
 			System.Array.Reverse(yTuple);
 
 			AreaData[,] areadata = new AreaData[xTuple.Length, yTuple.Length];
