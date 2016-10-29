@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525" AllowDrop="True" DragEnter="Window_DragEnter" Drop="Window_Drop">
     <Grid AllowDrop="False">
-        <Button x:Name="exportButton" Content="Export" HorizontalAlignment="Left" Margin="432,289,0,0" VerticalAlignment="Top" Width="75" Click="exportButton_Click"/>
-        <Button x:Name="clearButton" Content="Clear" HorizontalAlignment="Left" Margin="352,289,0,0" VerticalAlignment="Top" Width="75" Click="clearButton_Click"/>
+        <Button x:Name="exportButton" Content="Export" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="75" Click="exportButton_Click"/>
+        <Button x:Name="clearButton" Content="Clear" HorizontalAlignment="Right" Margin="0,0,90,10" VerticalAlignment="Bottom" Width="75" Click="clearButton_Click"/>
     </Grid>
 </Window>

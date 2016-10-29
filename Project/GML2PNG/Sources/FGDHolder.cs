@@ -8,10 +8,6 @@ namespace GML2PNG
 {
 	class FGDHolder
 	{
-		//日本なので、高さの制限を4000にしておく。
-		//超えた場合は情報落ちします。
-		const int highLimit = 4000;
-
 		Dictionary<Area, AreaData> dicDatas;
 		Location<int> high;
 
@@ -51,6 +47,8 @@ namespace GML2PNG
 		public void Export()
 		{
 			AreaData[,] areaDataArray = NewAreaDataArray(NewSortedSetX(), NewSortedSetY());
+			float[] limit = ElevationLimit(areaDataArray);
+			int highLimit = (int)(limit[1] - limit[0]);
 			int areaArrayX = areaDataArray.GetLength(0);
 			int areaArrayY = areaDataArray.GetLength(1);
 			int areaPixelX = high.x + 1;
@@ -113,6 +111,12 @@ namespace GML2PNG
 				}
 			}
 		}
+		public void Clear()
+		{
+			dicDatas.Clear();
+			high.x = 0;
+			high.y = 0;
+		}
 		SortedSet<float> NewSortedSetX()
 		{
 			SortedSet<float> ret = new SortedSet<float>();
@@ -152,6 +156,8 @@ namespace GML2PNG
 		{
 			Tuple<float, float>[] xTuple = NewPairValueArray(xSet);
 			Tuple<float, float>[] yTuple = NewPairValueArray(ySet);
+
+			//北西から南東に処理していくので、Y軸の順番はひっくり返す
 			System.Array.Reverse(yTuple);
 
 			AreaData[,] areadata = new AreaData[xTuple.Length, yTuple.Length];
@@ -170,14 +176,22 @@ namespace GML2PNG
 				}
 				++y;
 			}
-
 			return areadata;
 		}
-		public void Clear()
+		float[] ElevationLimit(AreaData[,] areaDataArray)
 		{
-			dicDatas.Clear();
-			high.x = 0;
-			high.y = 0;
+			float[] ret = { AreaData.elevationMin, AreaData.elevationMax,};
+			foreach(var v in areaDataArray)
+			{
+				if(v != null)
+				{
+					if (ret[0] > v.min)
+						ret[0] = v.min;
+					if (ret[1] > v.max)
+						ret[1] = v.max;
+				}
+			}
+			return ret;
 		}
 	}
 }

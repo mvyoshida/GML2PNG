@@ -42,15 +42,19 @@ namespace GML2PNG
 		{
 			if (!e.Data.GetDataPresent(DataFormats.FileDrop))
 				return;
+			Mouse.OverrideCursor = Cursors.Wait;
 			foreach (var filename in (string[])e.Data.GetData(DataFormats.FileDrop))
 			{
 				LoadXmlFile(filename);
 			}
+			Mouse.OverrideCursor = null;
 		}
 
 		private void exportButton_Click(object sender, RoutedEventArgs e)
 		{
+			Mouse.OverrideCursor = Cursors.Wait;
 			fgdHolder.Export();
+			Mouse.OverrideCursor = null;
 		}
 
 		private void clearButton_Click(object sender, RoutedEventArgs e)
