@@ -8,8 +8,10 @@ namespace GML2PNG
 {
 	class AreaData
 	{
-		public  const float elevationMin =    0f;
-		public  const float elevationMax = 4000f;		//日本なので、高さの制限を4000にしておく。
+		public const float elevationMin = 0f;
+		public const float elevationMax = 4000f;		//日本なので、高さの制限を4000にしておく。
+		public const float elevationOffset = 0f;		//下駄
+		public const float elevationSeaLevel= -0.2f;	//海面
 		public Location<int> high;
 		public float[,] elevation;
 		public float min;
@@ -50,7 +52,7 @@ namespace GML2PNG
 				for (int x = sx; x < high.x + 1; ++x)
 				{
 					elevation[x, y] = ReadTuple(tupleList[t++]);
-					if (t == tupleList.Length - 1)
+					if (t == tupleList.Length)
 						return;
 				}
 				sx = 0;
@@ -59,7 +61,7 @@ namespace GML2PNG
 		private float ReadTuple(string str)
 		{
 			string[] values = str.Split(',');
-			return (values[0] == "データなし") ? 0 : Math.Max(0, 10 + float.Parse(values[1]));
+			return (values[0] == "データなし") ? elevationSeaLevel : Math.Max(elevationSeaLevel, elevationOffset + float.Parse(values[1]));
 		}
 	}
 }
