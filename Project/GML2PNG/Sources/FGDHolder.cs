@@ -59,7 +59,7 @@ namespace GML2PNG
 			float[] totalArea = GetTotalArea(dic);
 			AreaData[,] areaDataArray = NewAreaDataArray(dic);
 			float[] limit = ElevationLimit(areaDataArray);
-			int highLimit = (int)(limit[1] - limit[0]);
+			//int highLimit = (int)(limit[1] - limit[0]);
 			int areaArrayX = areaDataArray.GetLength(0);
 			int areaArrayY = areaDataArray.GetLength(1);
 			int areaPixelX = high.x + 1;
@@ -71,6 +71,15 @@ namespace GML2PNG
 			{
 				for (int areaX = 0; areaX < areaArrayX; ++areaX)
 				{
+					//heightMap:Landscape=128:1m
+					//例：heightMapの値が35680=2912+0x800でUE4のLandscapeはスケール100の状態で22.75m
+					//UE4側でスケールを500にする想定とするとheightMapの値25.6で1m扱いとなる
+					//-1280m～1279m程度の表現が可能。
+					const float ue4DefaultScale = 100f;
+					const float ue4ApplyScale = 500f;
+					const float hightMapPerLandscape = 128f;
+					const float coefficient = hightMapPerLandscape / (ue4ApplyScale / ue4DefaultScale);
+					const UInt16 ue4SeaLevel = 0x8000;
 					AreaData areaData = areaDataArray[areaX, areaY];
 					if (areaData != null)
 					{
@@ -79,7 +88,8 @@ namespace GML2PNG
 							int i = ((areaY * areaPixelY + y) * outputImageX + (areaX * areaPixelX)) * 2;
 							for (int x = 0; x < areaPixelX; ++x)
 							{
-								UInt16 v = (UInt16)(areaData.elevation[x, y] * 65535 / highLimit);
+								float height = areaData.elevation[x, y];
+								UInt16 v = (UInt16)(height * coefficient + ue4SeaLevel);
 								hightMap[i++] = (byte)(v & 0xff);
 								hightMap[i++] = (byte)((v >> 8) & 0xff);
 							}
@@ -87,13 +97,17 @@ namespace GML2PNG
 					}
 					else
 					{
+						const float height =  AreaData.elevationSeaLevel;
+						UInt16 v = (UInt16)(height * coefficient + ue4SeaLevel);
+						byte v0 = (byte)(v & 0xff);
+						byte v1 = (byte)((v >> 8) & 0xff);
 						for (int y = 0; y < areaPixelY; ++y)
 						{
 							int i = ((areaY * areaPixelY + y) * outputImageX + (areaX * areaPixelX)) * 2;
 							for (int x = 0; x < areaPixelX; ++x)
 							{
-								hightMap[i++] = 0;
-								hightMap[i++] = 0;
+								hightMap[i++] = v0;
+								hightMap[i++] = v1;
 							}
 						}
 					}
